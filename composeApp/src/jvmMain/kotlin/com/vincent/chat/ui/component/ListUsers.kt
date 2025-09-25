@@ -1,10 +1,5 @@
 package com.vincent.chat.ui.component
 
-import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,46 +46,17 @@ fun ListUsers(
     val appState = koinInject<AppState>()
     val currentUser by appState.currentUser.collectAsState()
     val usersList by viewModel.usersList.collectAsState()
+    var query by rememberSaveable { mutableStateOf("") }
+
     Column(
         modifier = Modifier.fillMaxSize().padding(top = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        val networkState = appState.isConnected.collectAsState()
-        var query by rememberSaveable { mutableStateOf("") }
-        val infiniteTransition = rememberInfiniteTransition(label = "colorTransition")
-
-        val animatedColor by infiniteTransition.animateColor(
-            initialValue = Color.Red,
-            targetValue = Color.Red,
-            animationSpec = infiniteRepeatable(
-                animation = keyframes {
-                    durationMillis = 9000
-                    Color(0xFFF64E4E) at 0
-                    Color(0xFFFFF823) at 3000
-                    Color(0x9054A0FF) at 6000
-                    Color.Red at 9000
-                },
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "animatedColor"
-        )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            LoadingIndicator(
-                color = animatedColor
-            )
-            Text("Chats", style = HeadLineLarge)
-        }
+        Text("Chats", style = HeadLineLarge)
 
         Box(
-            modifier = Modifier
-                .zIndex(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
+            modifier = Modifier.zIndex(1f).fillMaxWidth().padding(horizontal = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             BasicTextField(
@@ -116,14 +83,12 @@ fun ListUsers(
                             }
                             innerTextField()
                         }
-                        if (query.isNotEmpty())
-                            IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Default.Clear, null)
-                            }
+                        if (query.isNotEmpty()) IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Default.Clear, null)
+                        }
                         else IconButton(onClick = { }) {}
                     }
-                }
-            )
+                })
         }
 
         if (usersList.isEmpty()) {
@@ -139,11 +104,8 @@ fun ListUsers(
             ) {
                 Image(
                     painter = rememberLottiePainter(
-                        composition = composition,
-                        iterations = Compottie.IterateForever
-                    ),
-                    contentDescription = "Lottie animation",
-                    modifier = Modifier.fillMaxWidth(0.6f)
+                        composition = composition, iterations = Compottie.IterateForever
+                    ), contentDescription = "Lottie animation", modifier = Modifier.fillMaxWidth(0.6f)
                 )
 
                 Text("There is no one to chat with", style = TitleLineBig.copy(fontSize = 16.sp))
@@ -161,8 +123,7 @@ fun ListUsers(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.size(48.dp)
                                     .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape).padding(3.dp)
-                                    .clip(CircleShape)
-                                    .background(
+                                    .clip(CircleShape).background(
                                         MaterialTheme.colorScheme.onPrimary.copy(0.2f), CircleShape
                                     ),
                             )
@@ -173,8 +134,8 @@ fun ListUsers(
                             containerColor = Color.Transparent,
                         ),
                         modifier = Modifier.padding(horizontal = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(
-                            onClick = { appState.selectedUser.value = user }
-                        ))
+                            onClick = { appState.selectedUser.value = user })
+                    )
 
                 }
             }
@@ -182,17 +143,25 @@ fun ListUsers(
 
         // end row
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 "${currentUser?.name}", style = HeadLineMedium.copy(
                     fontSize = 20.sp
                 )
             )
-            IconButton(onClick = { viewModel.logout() }) {
-                Icon(Icons.AutoMirrored.Default.ExitToApp, null, tint = Color.Unspecified)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+
+                IconButton(onClick = { viewModel.logout() }) {
+                    Icon(Icons.AutoMirrored.Default.ExitToApp, null, tint = Color.Unspecified)
+                }
+                IconButton(onClick = { viewModel.toggleShowConfigDialog() }) {
+                    Icon(Icons.Default.Settings, null, tint = Color.Unspecified)
+                }
             }
         }
     }

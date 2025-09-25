@@ -10,7 +10,9 @@ import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -42,26 +44,32 @@ class AppViewModel(
 
     val usersList = appState.listUsers
     val messages = appState.messages
+    val networkConfig = appState.networkConfig
 
 
     init {
-        connect()
+        viewModelScope.launch {
+            appState.networkConfig
+                .collect { newConfig ->
+                    println("Network Config updated: $newConfig")
+                    connect()
+                }
+        }
     }
 
     private fun connect() = viewModelScope.launch {
         try {
             disconnect(false)
 
-            socket = aSocket(selectorManager).tcp().connect("127.0.0.1", 9999)
+            socket = aSocket(selectorManager).tcp().connect(networkConfig.value.host, networkConfig.value.port)
             receiveChannel = socket?.openReadChannel()
             sendChannel = socket?.openWriteChannel(autoFlush = true)
             if (receiveChannel != null) {
                 println("Receive channel opened.")
             }
             _connected.value = true
-            reconnectAttempts = 0 // Reset attempts counter on successful connection
+            reconnectAttempts = 0
 
-            // Re-login if we have a user
             appState.currentUser.value?.let { user ->
                 sendChannel?.writeStringUtf8(json.encodeToString(Login(from = user.name)) + "\n")
             }
@@ -219,6 +227,14 @@ class AppViewModel(
             sendChannel?.writeStringUtf8(json.encodeToString(Msg.Logout(from = username)) + "\n")
         }
         appState.currentUser.value = null
+    }
+
+    fun setNetworkConfig(host: String, port: Int) {
+        appState.networkConfig.value = NetworkConfig(host, port)
+    }
+
+    fun toggleShowConfigDialog() {
+        appState.networkConfigShown.value = !appState.networkConfigShown.value
     }
 
     fun disconnect() {

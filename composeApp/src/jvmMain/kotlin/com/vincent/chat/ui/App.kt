@@ -26,6 +26,7 @@ import com.vincent.chat.theme.HeadLineLarge
 import com.vincent.chat.ui.component.ChatArea
 import com.vincent.chat.ui.component.ListUsers
 import com.vincent.chat.ui.component.LoginDialog
+import com.vincent.chat.ui.component.SettingDialog
 import com.vincent.chat.ui.state.AppState
 import com.vincent.chat.ui.state.LocalBottomSheetScaffoldState
 import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
@@ -114,5 +115,6 @@ fun App(
 			}
 		}
 		LoginDialog()
+		SettingDialog()
 	}
 }

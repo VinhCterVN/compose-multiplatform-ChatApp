@@ -5,6 +5,7 @@ import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -58,6 +59,7 @@ class ClientHandler(
                         }
                         username = m.from
                         server.broadcastUsers()
+                        println("User logged in: ${m.from}")
                     }
 
                     "send" -> {
@@ -91,6 +93,7 @@ class ClientHandler(
                             username?.let { server.unregister(it) }
                             server.broadcastUsers()
                         }
+                        println("User logged out: ${m.from}")
                     }
 
                     else -> send(Err(message = "Unknown type: $type"))

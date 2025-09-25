@@ -114,7 +114,7 @@ fun ChatMessages(
                                 verticalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 Text(
-                                    "File: ${File(msg.text).name}",
+                                    "File: ${filterFileName(File(msg.text).name) }}",
                                     style = MessageStyle,
                                     modifier = Modifier.padding(start = 8.dp)
                                 )
@@ -127,6 +127,13 @@ fun ChatMessages(
             item { Spacer(Modifier.height(50.dp)) }
         }
     }
+}
+fun filterFileName(path: String): String {
+    val first = path.indexOf('_')
+    if (first == -1) return ""
+    val second = path.indexOf('_', first + 1)
+    if (second == -1) return ""
+    return path.substring(second + 1)
 }
 
 private fun getFileIcon(path: String): DrawableResource {

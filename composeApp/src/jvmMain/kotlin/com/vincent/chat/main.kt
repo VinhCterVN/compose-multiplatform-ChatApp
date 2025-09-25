@@ -26,7 +26,7 @@ import org.koin.dsl.module
 @OptIn(ExperimentalMaterial3Api::class)
 fun main() = application {
     CoroutineScope(Dispatchers.IO).launch {
-        Server().run()
+        Server.run()
     }
 
     val state = rememberWindowState()

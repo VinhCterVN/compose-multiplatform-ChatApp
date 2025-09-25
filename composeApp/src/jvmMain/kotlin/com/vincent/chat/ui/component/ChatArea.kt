@@ -53,7 +53,7 @@ fun ChatArea(
 
     val disconnectComposition by rememberLottieComposition {
         LottieCompositionSpec.JsonString(
-            Res.readBytes("files/lost-connection.json").decodeToString()
+            Res.readBytes("files/error-with-cat.json").decodeToString()
         )
     }
 
@@ -63,14 +63,22 @@ fun ChatArea(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Image(
-                painter = rememberLottiePainter(
-                    composition = if (isConnected) composition else disconnectComposition,
-                    iterations = Compottie.IterateForever
-                ), contentDescription = "Lottie animation", modifier = Modifier.fillMaxWidth(0.6f)
-            )
+            if (isConnected)
+                Image(
+                    painter = rememberLottiePainter(
+                        composition = composition,
+                        iterations = Compottie.IterateForever
+                    ), contentDescription = "Lottie animation", modifier = Modifier.fillMaxWidth(0.6f)
+                )
+            else
+                Image(
+                    painter = rememberLottiePainter(
+                        composition = disconnectComposition,
+                        iterations = Compottie.IterateForever
+                    ), contentDescription = "Lottie animation", modifier = Modifier.fillMaxWidth(0.6f)
+                )
 //            Text("Select a chat to start messaging", style = TitleLineBig)
-            Text(if (isConnected) "You are connected" else "Disconnected", style = TitleLineBig)
+            Text(if (isConnected) "Select a chat to start messaging" else "You are Disconnected", style = TitleLineBig)
 //            Text("Window State: ${windowState.size.width} - ${windowState.size.height}", style = TitleLineBig)
         }
     } else {

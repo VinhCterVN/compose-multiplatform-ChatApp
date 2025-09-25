@@ -60,7 +60,10 @@ fun LoginDialog(
 					onClick = { viewModel.login(username) },
 					shape = RoundedCornerShape(8.dp),
 					modifier = Modifier.fillMaxWidth(0.75f),
-					elevation = ButtonDefaults.buttonElevation(8.dp)
+					elevation = ButtonDefaults.buttonElevation(8.dp),
+					colors = ButtonDefaults.buttonColors(
+						containerColor = MaterialTheme.colorScheme.onSecondaryContainer
+					)
 				) {
 					Text("Login")
 				}

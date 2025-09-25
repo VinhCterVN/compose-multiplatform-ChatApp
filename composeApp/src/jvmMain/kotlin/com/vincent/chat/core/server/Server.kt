@@ -3,25 +3,20 @@ package com.vincent.chat.core.server
 import com.vincent.chat.core.model.Users
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.net.BindException
 import java.util.concurrent.ConcurrentHashMap
 
-class Server(
-    private val port: Int = 9999
-) {
+object Server {
+    private const val PORT: Int = 9999
     private val clients = ConcurrentHashMap<String, ClientHandler>()
     private val selectorManager = SelectorManager(Dispatchers.IO)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun run() = runBlocking {
         try {
-            aSocket(selectorManager).tcp().bind("127.0.0.1", port).use { ss ->
-                println("Server listening on $port")
+            aSocket(selectorManager).tcp().bind("127.0.0.1", PORT).use { ss ->
+                println("Server listening on $PORT")
                 while (true) {
                     val clientSocket = ss.accept()
                     println("Client connected: ${clientSocket.localAddress}")
@@ -30,7 +25,7 @@ class Server(
                 }
             }
         } catch (e: BindException) {
-            println("Port $port is already in use. Please choose another port - ${e.message}\n")
+            println("Port $PORT is already in use. Please choose another port - ${e.message}\n")
             return@runBlocking
         } catch (e: Exception) {
             println("Server Exception: ${e.message}\n")
@@ -56,5 +51,5 @@ class Server(
 }
 
 fun main() {
-    Server().run()
+    Server.run()
 }
