@@ -8,12 +8,7 @@ import com.vincent.chat.ui.state.AppState
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -53,6 +48,7 @@ class AppViewModel(
                 .collect { newConfig ->
                     println("Network Config updated: $newConfig")
                     connect()
+                    appState.currentUser.value?.let { login(it.name); println("Login Requested ${it.name}") }
                 }
         }
     }
@@ -110,8 +106,9 @@ class AppViewModel(
         }
     }
 
-    private fun disconnect(closeSelector: Boolean = true) = viewModelScope.launch {
+    private suspend fun disconnect(closeSelector: Boolean = true) = viewModelScope.async {
         try {
+            if (appState.currentUser.value != null) logout()
             sendChannel?.flushAndClose()
             receiveChannel?.cancel()
             socket?.close()
@@ -120,7 +117,7 @@ class AppViewModel(
                 selectorManager.close()
             }
         }
-    }
+    }.await()
 
 
     fun handleIncoming(jsonLine: String) {
@@ -147,7 +144,7 @@ class AppViewModel(
                         to = appState.currentUser.value?.name ?: "Message",
                         text = text,
 //                        msgType = MessageType.valueOf(el.jsonObject["msgType"]!!.jsonPrimitive.content)
-                    )
+                    ),
                 )
             }
 
@@ -240,7 +237,7 @@ class AppViewModel(
     fun disconnect() {
         reconnectJob?.cancel()
         viewModelScope.launch {
-            disconnect(true).join()
+            disconnect(true)
         }
     }
 }

@@ -12,6 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +24,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindow
 import com.vincent.chat.core.model.MessageType
 import com.vincent.chat.core.model.Msg
 import com.vincent.chat.theme.MessageStyle
@@ -42,6 +47,7 @@ fun ChatMessages(
     val currentUser by appState.currentUser.collectAsState()
     val selectedUser by appState.selectedUser.collectAsState()
     val messages = appState.messages
+    var mediaUrl by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.padding(horizontal = 12.dp).then(modifier)
@@ -84,7 +90,25 @@ fun ChatMessages(
                                 .clickable(
                                     onClick = {
                                         try {
-                                            Desktop.getDesktop().open(File(msg.text))
+//                                            Desktop.getDesktop().open(File(msg.text))
+                                            if (File(msg.text).extension in listOf(
+                                                    "mp4",
+                                                    "mov",
+                                                    "avi",
+                                                    "mkv",
+                                                    "mp3",
+                                                    "wav",
+                                                    "flac",
+                                                    "m4a",
+                                                    "png",
+                                                    "jpg",
+                                                    "jpeg"
+                                                )
+                                            ) {
+                                                mediaUrl = msg.text
+                                            } else {
+                                                Desktop.getDesktop().open(File(msg.text))
+                                            }
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                         }
@@ -93,13 +117,6 @@ fun ChatMessages(
                                 .padding(end = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-//							AsyncImage(
-//								model = "https://img.icons8.com/?size=200&id=lWFsF2cio5WW&format=png",
-//								contentDescription = "File",
-//								modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)),
-//								contentScale = ContentScale.Fit
-//							)
-
                             Box(Modifier.padding(vertical = 8.dp)) {
                                 Image(
                                     painter = painterResource(getFileIcon(msg.text)),
@@ -114,7 +131,7 @@ fun ChatMessages(
                                 verticalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 Text(
-                                    "File: ${filterFileName(File(msg.text).name) }}",
+                                    "File: ${File(msg.text).name}",
                                     style = MessageStyle,
                                     modifier = Modifier.padding(start = 8.dp)
                                 )
@@ -126,14 +143,19 @@ fun ChatMessages(
             }
             item { Spacer(Modifier.height(50.dp)) }
         }
+
+        DialogWindow(
+            visible = mediaUrl.isNotEmpty(),
+            onCloseRequest = { mediaUrl = "" },
+        ) {
+            Column(
+                Modifier.widthIn(min = 400.dp).background(MaterialTheme.colorScheme.surfaceBright),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Media Info")
+            }
+        }
     }
-}
-fun filterFileName(path: String): String {
-    val first = path.indexOf('_')
-    if (first == -1) return ""
-    val second = path.indexOf('_', first + 1)
-    if (second == -1) return ""
-    return path.substring(second + 1)
 }
 
 private fun getFileIcon(path: String): DrawableResource {

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +29,7 @@ fun CustomTextField(
 	selectedFile: MutableState<String>,
 	modifier: Modifier = Modifier,
 	placeholderText: String = "Placeholder",
-	shape: Shape = CircleShape,
+	shape: Shape = RoundedCornerShape(12.dp),
 	leadingIcon: (@Composable () -> Unit)? = null,
 	trailingIcon: (@Composable () -> Unit)? = null,
 	fontSize: TextUnit = MaterialTheme.typography.bodyMedium.fontSize,

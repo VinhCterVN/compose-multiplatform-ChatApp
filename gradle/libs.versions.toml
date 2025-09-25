@@ -16,6 +16,7 @@ compottie = "2.0.0"
 voyager = "1.1.0-beta02"
 ktor = "3.2.3"
 logback = "1.5.6"
+media-player-version = "1.0.46"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -34,20 +35,26 @@ coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil-compose" 
 
 material-expressive = { module = "org.jetbrains.compose.material3:material3", version.ref = "material-expressive" }
 
+# Koin
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 
+# Compottie
 compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "compottie" }
 compottie-lite = { module = "io.github.alexzhirkevich:compottie-lite", version.ref = "compottie" }
 compottie-dot = { module = "io.github.alexzhirkevich:compottie-dot", version.ref = "compottie" }
 compottie-network = { module = "io.github.alexzhirkevich:compottie-network", version.ref = "compottie" }
 compottie-resources = { module = "io.github.alexzhirkevich:compottie-resources", version.ref = "compottie" }
 
+# Ktor
 ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 voyager = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
+
+# MediaPlayer
+media-player = {module = "network.chaintech:compose-multiplatform-media-player", version.ref = "media-player-version"}
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }

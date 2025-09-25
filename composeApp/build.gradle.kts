@@ -25,20 +25,17 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.serialization.cbor)
-
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
-
             implementation(libs.compottie)
-
             implementation(libs.voyager)
-
 //			Coil
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
-
 //			Ktor Client
             implementation(libs.ktor.network)
+//           Media Player
+            implementation(libs.media.player)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -51,6 +48,13 @@ kotlin {
     }
 }
 
+repositories {
+    google()
+    mavenCentral()
+    maven("https://jogamp.org/deployment/maven")
+}
+
+
 compose.desktop {
     application {
         mainClass = "com.vincent.chat.MainKt"
@@ -59,10 +63,10 @@ compose.desktop {
             isEnabled.set(false)
         }
 
-		nativeDistributions {
-			targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
-			packageName = "com.vincent.chat"
-			packageVersion = "1.0.0"
-		}
-	}
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
+            packageName = "com.vincent.chat"
+            packageVersion = "1.0.0"
+        }
+    }
 }

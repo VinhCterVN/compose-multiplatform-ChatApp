@@ -5,7 +5,6 @@ import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -26,17 +25,19 @@ class ClientHandler(
     var username: String? = null
 
     fun send(obj: Any) = scope.launch(Dispatchers.IO) {
-        try {
-            val text = when (obj) {
-                is Err -> json.encodeToString(obj)
-                is Users -> json.encodeToString(obj)
-                is Deliver -> json.encodeToString(obj)
-                is FileDeliver -> json.encodeToString(obj)
-                else -> throw IllegalArgumentException("Cannot serialize object of type ${obj::class.simpleName}")
+        if (!sendChannel.isClosedForWrite) {
+            try {
+                val text = when (obj) {
+                    is Err -> json.encodeToString(obj)
+                    is Users -> json.encodeToString(obj)
+                    is Deliver -> json.encodeToString(obj)
+                    is FileDeliver -> json.encodeToString(obj)
+                    else -> throw IllegalArgumentException("Cannot serialize object of type ${obj::class.simpleName}")
+                }
+                sendChannel.writeStringUtf8(text + "\n")
+            } catch (e: NullPointerException) {
+                println("Send error: ${e.message}")
             }
-            sendChannel.writeStringUtf8(text + "\n")
-        } catch (e: NullPointerException) {
-            println("Send error: ${e.message}")
         }
     }
 
@@ -104,6 +105,7 @@ class ClientHandler(
             receiveChannel.cancel()
             sendChannel.flushAndClose()
             socket.close()
+            username?.let { server.unregister(it); server.broadcastUsers() }
         }
     }
 }
