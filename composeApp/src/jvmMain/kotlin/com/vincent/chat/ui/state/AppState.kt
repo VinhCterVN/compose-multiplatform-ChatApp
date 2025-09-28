@@ -13,6 +13,6 @@ class AppState {
     val listUsers = MutableStateFlow<List<String>>(emptyList())
     val messages = mutableStateMapOf<String, SnapshotStateList<Msg.Send>>()
     val networkConfig = MutableStateFlow(NetworkConfig())
-    val networkConfigShown = MutableStateFlow(false)
+    val networkConfigShown = MutableStateFlow(true)
     val isConnected = MutableStateFlow(false)
 }

@@ -15,7 +15,7 @@ object Server {
 
     fun run() = runBlocking {
         try {
-            aSocket(selectorManager).tcp().bind("127.0.0.1", PORT).use { ss ->
+            aSocket(selectorManager).tcp().bind("0.0.0.0", PORT).use { ss ->
                 println("Server listening on $PORT")
                 while (true) {
                     val clientSocket = ss.accept()

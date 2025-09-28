@@ -16,6 +16,7 @@ import androidx.compose.ui.window.Dialog
 import com.vincent.chat.theme.HeadLineMedium
 import com.vincent.chat.ui.state.AppState
 import com.vincent.chat.ui.viewModels.AppViewModel
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
@@ -25,8 +26,26 @@ fun SettingDialog(
 ) {
     val networkConfigShown = appState.networkConfigShown.collectAsState()
     val networkConfig = appState.networkConfig.collectAsState()
+    val isConnected = appState.isConnected.collectAsState()
     var tempHost by remember { mutableStateOf(networkConfig.value.host) }
-    var tempPort by remember { mutableStateOf(networkConfig.value.port) }
+    var tempPort by remember { mutableStateOf(networkConfig.value.port.toString()) }
+    var portError by remember { mutableStateOf(false) }
+    var isReconnecting by remember { mutableStateOf(false) }
+
+
+    LaunchedEffect(networkConfig.value) {
+        tempHost = networkConfig.value.host
+        tempPort = networkConfig.value.port.toString()
+    }
+
+
+    LaunchedEffect(isConnected.value, isReconnecting) {
+        if (isReconnecting && isConnected.value) {
+            delay(1000)
+            isReconnecting = false
+            viewModel.toggleShowConfigDialog(true)
+        }
+    }
 
     if (!networkConfigShown.value) return
 
@@ -42,8 +61,6 @@ fun SettingDialog(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Text("Config your Network", style = HeadLineMedium)
-
-            // 2 text fields for temp...
 
             TextField(
                 value = tempHost,
@@ -63,12 +80,25 @@ fun SettingDialog(
             )
 
             TextField(
-                value = tempPort.toString(),
-                onValueChange = { tempPort = it.toInt() },
+                value = tempPort,
+                onValueChange = {
+                    tempPort = it
+
+                    portError = try {
+                        val port = it.toInt()
+                        port <= 0 || port > 65535
+                    } catch (e: NumberFormatException) {
+                        it.isNotEmpty()
+                    }
+                },
                 shape = RoundedCornerShape(12.dp),
                 placeholder = { Text("Port") },
                 leadingIcon = { Icon(Icons.Default.Cable, null) },
                 maxLines = 1,
+                isError = portError,
+                supportingText = if (portError) {
+                    { Text("Port must be a number between 1 and 65535", color = MaterialTheme.colorScheme.error) }
+                } else null,
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
@@ -79,18 +109,66 @@ fun SettingDialog(
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
 
-            ElevatedButton(
-                onClick = { viewModel.setNetworkConfig(tempHost, tempPort) },
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(0.75f),
-                elevation = ButtonDefaults.buttonElevation(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(0.8f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Confirm")
-            }
+                if (isConnected.value && !isReconnecting) {
+                    OutlinedButton(
+                        onClick = { viewModel.toggleShowConfigDialog() },
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel")
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                if (isReconnecting) "Reconnecting..." else "Connecting...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
 
+                ElevatedButton(
+                    onClick = {
+                        if (tempHost.isNotBlank() && tempPort.isNotBlank() && !portError) {
+                            try {
+                                val port = tempPort.toInt()
+                                if (tempHost != networkConfig.value.host || port != networkConfig.value.port) {
+                                    isReconnecting = true
+                                    viewModel.setNetworkConfig(tempHost, port)
+                                }
+                            } catch (e: NumberFormatException) {
+
+                            }
+                        }
+                    },
+                    enabled = tempHost.isNotBlank() && tempPort.isNotBlank() && !portError,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f),
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Text("Confirm")
+                }
+            }
         }
     }
 }

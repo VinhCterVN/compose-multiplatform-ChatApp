@@ -56,16 +56,29 @@ fun LoginDialog(
 					)
 				)
 
-				ElevatedButton(
-					onClick = { viewModel.login(username) },
-					shape = RoundedCornerShape(8.dp),
+				Row(
 					modifier = Modifier.fillMaxWidth(0.75f),
-					elevation = ButtonDefaults.buttonElevation(8.dp),
-					colors = ButtonDefaults.buttonColors(
-						containerColor = MaterialTheme.colorScheme.onSecondaryContainer
-					)
+					verticalAlignment = Alignment.CenterVertically,
+					horizontalArrangement = Arrangement.spacedBy(8.dp)
 				) {
-					Text("Login")
+					OutlinedButton(
+						onClick = { viewModel.toggleShowConfigDialog() },
+						shape = RoundedCornerShape(8.dp)
+					) {
+						Text("Config")
+					}
+
+					ElevatedButton(
+						onClick = { viewModel.login(username) },
+						shape = RoundedCornerShape(8.dp),
+						modifier = Modifier.weight(1f),
+						elevation = ButtonDefaults.buttonElevation(8.dp),
+						colors = ButtonDefaults.buttonColors(
+							containerColor = MaterialTheme.colorScheme.onSecondaryContainer
+						)
+					) {
+						Text("Login")
+					}
 				}
 			}
 		}

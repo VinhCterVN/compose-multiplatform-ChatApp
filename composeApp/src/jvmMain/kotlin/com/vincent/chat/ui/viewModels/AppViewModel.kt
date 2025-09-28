@@ -41,34 +41,56 @@ class AppViewModel(
     val messages = appState.messages
     val networkConfig = appState.networkConfig
 
-
     init {
         viewModelScope.launch {
             appState.networkConfig
                 .collect { newConfig ->
                     println("Network Config updated: $newConfig")
-                    connect()
-                    appState.currentUser.value?.let { login(it.name); println("Login Requested ${it.name}") }
+                    reconnectWithNewConfig()
                 }
+        }
+        viewModelScope.launch {
+            appState.listUsers.collect { newList ->
+                if (appState.selectedUser.value != null && !newList.contains(appState.selectedUser.value)) {
+                    appState.selectedUser.value = null
+                    println("Selected user was removed from the list, resetting selection.")
+                }
+            }
+        }
+    }
+
+    private suspend fun reconnectWithNewConfig() {
+        val currentUser = appState.currentUser.value
+
+        disconnect(closeSelector = false)
+        connect()
+
+        currentUser?.let { user ->
+            delay(500)
+            login(user.name)
+            println("Auto-login after config change: ${user.name}")
         }
     }
 
     private fun connect() = viewModelScope.launch {
         try {
+            reconnectJob?.cancel()
+
             disconnect(false)
 
-            socket = aSocket(selectorManager).tcp().connect(networkConfig.value.host, networkConfig.value.port)
+            val config = networkConfig.value
+            println("\nConnecting to ${config.host}:${config.port}")
+
+            socket = aSocket(selectorManager).tcp().connect(config.host, config.port)
             receiveChannel = socket?.openReadChannel()
             sendChannel = socket?.openWriteChannel(autoFlush = true)
+
             if (receiveChannel != null) {
-                println("Receive channel opened.")
+                println("Connected successfully to ${config.host}:${config.port}")
             }
+
             _connected.value = true
             reconnectAttempts = 0
-
-            appState.currentUser.value?.let { user ->
-                sendChannel?.writeStringUtf8(json.encodeToString(Login(from = user.name)) + "\n")
-            }
 
             launch {
                 try {
@@ -80,26 +102,45 @@ class AppViewModel(
                 } catch (e: Exception) {
                     println("Connection lost: ${e.message} : ${e.cause}")
                     _connected.value = false
-                    scheduleReconnect()
+
+
+                    if (_connected.value) {
+                        scheduleReconnect()
+                    }
                 }
             }
         } catch (e: ConnectException) {
             println("Cannot connect to server: ${e.message}")
             _connected.value = false
             scheduleReconnect()
+        } catch (e: Exception) {
+            println("Connection error: ${e.message}")
+            _connected.value = false
+            scheduleReconnect()
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch {
+            disconnect(true)
         }
     }
 
     private fun scheduleReconnect() {
         reconnectJob?.cancel()
         if (reconnectAttempts < maxReconnectAttempts) {
-            val delayMs = baseReconnectDelayMs * (1 shl reconnectAttempts) // Exponential backoff
+            val delayMs = baseReconnectDelayMs * (1 shl reconnectAttempts)
             reconnectAttempts++
 
             println("Scheduling reconnect attempt $reconnectAttempts in ${delayMs}ms")
             reconnectJob = viewModelScope.launch {
                 delay(delayMs)
                 connect()
+                appState.currentUser.value?.let { user ->
+                    delay(500)
+                    login(user.name)
+                }
             }
         } else {
             println("Max reconnect attempts reached")
@@ -108,10 +149,20 @@ class AppViewModel(
 
     private suspend fun disconnect(closeSelector: Boolean = true) = viewModelScope.async {
         try {
-            if (appState.currentUser.value != null) logout()
+
+            if (_connected.value && appState.currentUser.value != null) {
+                logout()
+                delay(100)
+            }
+
             sendChannel?.flushAndClose()
             receiveChannel?.cancel()
             socket?.close()
+            _connected.value = false
+
+            println("Disconnected (closeSelector: $closeSelector)")
+        } catch (e: Exception) {
+            println("Error during disconnect: ${e.message}")
         } finally {
             if (closeSelector) {
                 selectorManager.close()
@@ -143,7 +194,6 @@ class AppViewModel(
                         from = from,
                         to = appState.currentUser.value?.name ?: "Message",
                         text = text,
-//                        msgType = MessageType.valueOf(el.jsonObject["msgType"]!!.jsonPrimitive.content)
                     ),
                 )
             }
@@ -211,33 +261,44 @@ class AppViewModel(
     }
 
     fun login(username: String) = viewModelScope.launch {
-        if (_connected.value)
-            sendChannel?.writeStringUtf8(json.encodeToString(Login(from = username)) + "\n")
-
-        val oldUser = appState.currentUser.value
-        appState.currentUser.value = oldUser?.copy(name = username) ?: User(name = username)
+        if (_connected.value) {
+            try {
+                sendChannel?.writeStringUtf8(json.encodeToString(Login(from = username)) + "\n")
+                val oldUser = appState.currentUser.value
+                appState.currentUser.value = oldUser?.copy(name = username) ?: User(name = username)
+                println("Login sent for user: $username")
+            } catch (e: Exception) {
+                println("Error during login: ${e.message}")
+            }
+        } else {
+            println("Cannot login: not connected.")
+        }
     }
 
     fun logout() = viewModelScope.launch {
         if (_connected.value) {
             val username = appState.currentUser.value?.name ?: return@launch
-            sendChannel?.writeStringUtf8(json.encodeToString(Msg.Logout(from = username)) + "\n")
+            try {
+                sendChannel?.writeStringUtf8(json.encodeToString(Msg.Logout(from = username)) + "\n")
+                println("Logout sent for user: $username")
+            } catch (e: Exception) {
+                println("Error during logout: ${e.message}")
+            }
         }
         appState.currentUser.value = null
     }
 
     fun setNetworkConfig(host: String, port: Int) {
-        appState.networkConfig.value = NetworkConfig(host, port)
+        val newConfig = NetworkConfig(host, port)
+        println("Setting new network config: $newConfig")
+        appState.networkConfig.value = newConfig
     }
 
     fun toggleShowConfigDialog() {
         appState.networkConfigShown.value = !appState.networkConfigShown.value
     }
 
-    fun disconnect() {
-        reconnectJob?.cancel()
-        viewModelScope.launch {
-            disconnect(true)
-        }
+    fun toggleShowConfigDialog(value: Boolean) {
+        appState.networkConfigShown.value = true
     }
 }
