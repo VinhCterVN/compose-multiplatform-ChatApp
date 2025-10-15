@@ -45,6 +45,7 @@ fun ListUsers(
 ) {
     val appState = koinInject<AppState>()
     val currentUser by appState.currentUser.collectAsState()
+    val messages = appState.messages
     val usersList by viewModel.usersList.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
 
@@ -129,7 +130,7 @@ fun ListUsers(
                             )
                         },
                         headlineContent = { Text(user, style = TitleLineLarge) },
-                        supportingContent = { Text("Last message") },
+                        supportingContent = { Text(messages[user]?.last()?.text ?: "No Messages") },
                         colors = ListItemDefaults.colors(
                             containerColor = Color.Transparent,
                         ),

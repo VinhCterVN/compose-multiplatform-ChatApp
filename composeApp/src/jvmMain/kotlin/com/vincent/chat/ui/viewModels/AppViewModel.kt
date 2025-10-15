@@ -261,17 +261,14 @@ class AppViewModel(
     }
 
     fun login(username: String) = viewModelScope.launch {
-        if (_connected.value) {
-            try {
-                sendChannel?.writeStringUtf8(json.encodeToString(Login(from = username)) + "\n")
-                val oldUser = appState.currentUser.value
-                appState.currentUser.value = oldUser?.copy(name = username) ?: User(name = username)
-                println("Login sent for user: $username")
-            } catch (e: Exception) {
-                println("Error during login: ${e.message}")
-            }
-        } else {
-            println("Cannot login: not connected.")
+        if (!_connected.value) return@launch
+        try {
+            sendChannel?.writeStringUtf8(json.encodeToString(Login(from = username)) + "\n")
+            val oldUser = appState.currentUser.value
+            appState.currentUser.value = oldUser?.copy(name = username) ?: User(name = username)
+            println("Login sent for user: $username")
+        } catch (e: Exception) {
+            println("Error during login: ${e.message}")
         }
     }
 
